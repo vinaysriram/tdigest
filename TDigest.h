@@ -25,8 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "glog/logging.h"
-
 namespace tdigest {
 
 using Value = double;
@@ -225,16 +223,10 @@ class TDigest {
 
   // return the cdf on the processed values
   Value cdfProcessed(Value x) const {
-    DLOG(INFO) << "cdf value " << x;
-    DLOG(INFO) << "processed size " << processed_.size();
     if (processed_.size() == 0) {
       // no data to examin_e
-      DLOG(INFO) << "no processed values";
-
       return 0.0;
     } else if (processed_.size() == 1) {
-      DLOG(INFO) << "one processed value "
-                 << " min_ " << min_ << " max_ " << max_;
       // exactly one centroid, should have max_==min_
       auto width = max_ - min_;
       if (x < min_) {
@@ -251,22 +243,15 @@ class TDigest {
     } else {
       auto n = processed_.size();
       if (x <= min_) {
-        DLOG(INFO) << "below min_ "
-                   << " min_ " << min_ << " x " << x;
         return 0;
       }
 
       if (x >= max_) {
-        DLOG(INFO) << "above max_ "
-                   << " max_ " << max_ << " x " << x;
         return 1;
       }
 
       // check for the left tail
       if (x <= mean(0)) {
-        DLOG(INFO) << "left tail "
-                   << " min_ " << min_ << " mean(0) " << mean(0) << " x " << x;
-
         // note that this is different than mean(0) > min_ ... this guarantees interpolation works
         if (mean(0) - min_ > 0) {
           return (x - min_) / (mean(0) - min_) * weight(0) / processedWeight_ / 2.0;
@@ -277,9 +262,6 @@ class TDigest {
 
       // and the right tail
       if (x >= mean(n - 1)) {
-        DLOG(INFO) << "right tail"
-                   << " max_ " << max_ << " mean(n - 1) " << mean(n - 1) << " x " << x;
-
         if (max_ - mean(n - 1) > 0) {
           return 1.0 - (max_ - x) / (max_ - mean(n - 1)) * weight(n - 1) / processedWeight_ / 2.0;
         } else {
@@ -295,9 +277,6 @@ class TDigest {
       auto z2 = (iter)->mean() - x;
       CHECK_LE(0.0, z1);
       CHECK_LE(0.0, z2);
-      DLOG(INFO) << "middle "
-                 << " z1 " << z1 << " z2 " << z2 << " x " << x;
-
       return weightedAverage(cumulative_[i - 1], z2, cumulative_[i], z1) / processedWeight_;
     }
   }
@@ -312,7 +291,6 @@ class TDigest {
   // the value will not represent the unprocessed values
   Value quantileProcessed(Value q) const {
     if (q < 0 || q > 1) {
-      LOG(ERROR) << "q should be in [0,1], got " << q;
       return NAN;
     }
 
@@ -343,7 +321,6 @@ class TDigest {
       auto i = std::distance(cumulative_.cbegin(), iter);
       auto z1 = index - *(iter - 1);
       auto z2 = *(iter)-index;
-      // LOG(INFO) << "z2 " << z2 << " index " << index << " z1 " << z1;
       return weightedAverage(mean(i - 1), z2, mean(i), z1);
     }
 
@@ -451,7 +428,6 @@ class TDigest {
     }
 
     std::vector<Centroid> sorted;
-    LOG(INFO) << "total " << total;
     sorted.reserve(total);
 
     while (!pq.empty()) {
@@ -520,9 +496,7 @@ class TDigest {
     }
     unprocessed_.clear();
     min_ = std::min(min_, processed_[0].mean());
-    DLOG(INFO) << "new min_ " << min_;
     max_ = std::max(max_, (processed_.cend() - 1)->mean());
-    DLOG(INFO) << "new max_ " << max_;
     updateCumulative();
   }
 
@@ -537,13 +511,9 @@ class TDigest {
       auto dq = w / total;
       auto k2 = integratedLocation(q + dq);
       if (k2 - k1 > 1 && w != 1) {
-        LOG(WARNING) << "Oversize centroid at " << std::distance(sorted.cbegin(), iter) << " k1 " << k1 << " k2 " << k2
-                     << " dk " << (k2 - k1) << " w " << w << " q " << q;
         badWeight++;
       }
       if (k2 - k1 > 1.5 && w != 1) {
-        LOG(ERROR) << "Egregiously Oversize centroid at " << std::distance(sorted.cbegin(), iter) << " k1 " << k1
-                   << " k2 " << k2 << " dk " << (k2 - k1) << " w " << w << " q " << q;
         badWeight++;
       }
       q += dq;
