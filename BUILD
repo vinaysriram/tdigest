@@ -1,35 +1,10 @@
-package(default_visibility = ["//visibility:public"])
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
-cc_test(
-    name = "tdigest_test",
-    srcs = [
-        "TDigestTest.cpp",
-    ],
-    size = "small",
-    deps = [
-        ":tdigest",
-        "//external:gtest",
-        "//external:glog",
-    ],
-    copts = [
-        "-std=c++11",
-    ],
-)
+package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "tdigest",
-    srcs = [
-    ],
-    hdrs = [
-        "TDigest.h",
-    ],
-    deps = [
-        "//external:glog",
-        "//external:gtest",
-    ],
-    copts = [
-        "-std=c++11",
-    ],
+    hdrs = ["TDigest.h"],
 )
 
 
