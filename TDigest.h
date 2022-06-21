@@ -44,7 +44,6 @@ class Centroid {
   inline Weight weight() const noexcept { return weight_; }
 
   inline void add(const Centroid& c) {
-    CHECK_GT(c.weight_, 0);
     if( weight_ != 0.0 ) {
       weight_ += c.weight_;
       mean_ += c.weight_ * (c.mean_ - mean_) / weight_;
@@ -275,8 +274,6 @@ class TDigest {
       auto i = std::distance(processed_.cbegin(), iter);
       auto z1 = x - (iter - 1)->mean();
       auto z2 = (iter)->mean() - x;
-      CHECK_LE(0.0, z1);
-      CHECK_LE(0.0, z2);
       return weightedAverage(cumulative_[i - 1], z2, cumulative_[i], z1) / processedWeight_;
     }
   }
@@ -311,7 +308,6 @@ class TDigest {
 
     // at the boundaries, we return min_ or max_
     if (index <= weight(0) / 2.0) {
-      CHECK_GT(weight(0), 0);
       return min_ + 2.0 * index / weight(0) * (mean(0) - min_);
     }
 
@@ -323,9 +319,6 @@ class TDigest {
       auto z2 = *(iter)-index;
       return weightedAverage(mean(i - 1), z2, mean(i), z1);
     }
-
-    CHECK_LE(index, processedWeight_);
-    CHECK_GE(index, processedWeight_ - weight(n - 1) / 2.0);
 
     auto z1 = index - processedWeight_ - weight(n - 1) / 2.0;
     auto z2 = weight(n - 1) / 2 - z1;
@@ -565,7 +558,6 @@ class TDigest {
    * <code>x2</code>.
    */
   static Value weightedAverageSorted(Value x1, Value w1, Value x2, Value w2) {
-    CHECK_LE(x1, x2);
     const Value x = (x1 * w1 + x2 * w2) / (w1 + w2);
     return std::max(x1, std::min(x, x2));
   }
